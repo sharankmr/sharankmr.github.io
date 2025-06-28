@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Login | Assessment Portal</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -58,6 +56,32 @@
       font-size: 15px;
     }
 
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-wrapper input {
+      padding-right: 40px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .password-toggle svg {
+      fill: #666;
+      width: 20px;
+      height: 20px;
+    }
+
     button {
       width: 100%;
       padding: 12px;
@@ -91,7 +115,6 @@
 
 <body>
   <script>
-    // Redirect if already logged in (sessionStorage)
     if (sessionStorage.getItem("loggedInUser")) {
       window.location.href = "index.html";
     }
@@ -99,49 +122,81 @@
 
   <div class="login-box">
     <img src="https://cdn-icons-png.flaticon.com/512/5087/5087579.png" alt="Login Icon">
-    <h2>Welcome Back to Exam Portal</h2>
+    <h2>Sharan's Experience Exam Portal</h2>
     <p>Please enter your credentials to begin</p>
 
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <p id="error"></p>
+    <form onsubmit="login(); return false;">
+      <input type="email" id="username" placeholder="Email" autocomplete="username" required />
+
+      <div class="password-wrapper">
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" required />
+        <span class="password-toggle" onclick="togglePassword()">
+          <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 5c-7.633 0-11 7-11 7s3.367 7 11 7 11-7 11-7-3.367-7-11-7zm0 
+              12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/>
+          </svg>
+        </span>
+      </div>
+
+      <button type="submit">Login</button>
+      <p id="error"></p>
+    </form>
 
     <div class="footer-note">🛡️ This session will expire after 2 hours of inactivity</div>
   </div>
 
   <script>
-    async function login() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+    function togglePassword() {
+      const pass = document.getElementById("password");
+      const eyeIcon = document.getElementById("eyeIcon");
 
-      if (!username || !password) {
-        document.getElementById("error").innerText = "Username and password are required.";
+      if (pass.type === "password") {
+        pass.type = "text";
+        eyeIcon.innerHTML = `<path d="M12 5c-7.633 0-11 7-11 7s3.367 7 11 7c1.975 0 3.79-.48 5.387-1.304l2.59 2.59 1.414-1.414-18-18-1.414 1.414 3.42 3.42C3.265 10.234 1 12 1 12s3.367 7 11 7c2.178 0 4.213-.643 6-1.736l2.32 2.32 1.414-1.414-2.59-2.59A10.936 10.936 0 0023 12s-3.367-7-11-7zm0 12a5 5 0 01-5-5c0-.525.084-1.03.235-1.5l6.265 6.265A4.959 4.959 0 0112 17z"/>`;
+      } else {
+        pass.type = "password";
+        eyeIcon.innerHTML = `<path d="M12 5c-7.633 0-11 7-11 7s3.367 7 11 7 11-7 11-7-3.367-7-11-7zm0 
+          12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/>`;
+      }
+    }
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCmUyBI2od0-gufCXzsZit-zGulTOerzV8",
+      authDomain: "assessment-portal-f4389.firebaseapp.com",
+      projectId: "assessment-portal-f4389",
+      storageBucket: "assessment-portal-f4389.appspot.com",
+      messagingSenderId: "880390665214",
+      appId: "1:880390665214:web:30662484309853a2a746af",
+      measurementId: "G-XLHFT66Q6X"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    window.login = async function () {
+      const email = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const error = document.getElementById("error");
+
+      if (!email || !password) {
+        error.innerText = "Email and password are required.";
         return;
       }
 
       try {
-        const res = await fetch("users.json");
-        const users = await res.json();
-
-        const match = users.find(u => u.username === username && u.password === password);
-
-        if (match) {
-          sessionStorage.setItem("loggedInUser", username);
-          sessionStorage.setItem("lastActivity", Date.now()); // 🕒 set initial activity timestamp
-          window.location.href = "index.html";
-        } else {
-          document.getElementById("error").innerText = "Invalid username or password.";
-        }
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        sessionStorage.setItem("loggedInUser", userCredential.user.email);
+        sessionStorage.setItem("lastActivity", Date.now());
+        window.location.href = "index.html";
       } catch (err) {
-        console.error("Login error:", err);
-        document.getElementById("error").innerText = "Error loading user data.";
+        error.innerText = "Login failed: " + err.message;
       }
-    }
-
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") login();
-    });
+    };
   </script>
 </body>
 </html>
