@@ -99,7 +99,7 @@
       background: #0056b3;
     }
 
-    #error {
+    #error, #signupError {
       color: red;
       font-size: 14px;
       margin-top: 12px;
@@ -109,6 +109,25 @@
       font-size: 12px;
       margin-top: 20px;
       color: #999;
+    }
+
+    #signupModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+    }
+
+    #signupModal .modal-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      width: 300px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      text-align: center;
     }
   </style>
 </head>
@@ -127,7 +146,6 @@
 
     <form onsubmit="login(); return false;">
       <input type="email" id="username" placeholder="Email" autocomplete="username" required />
-
       <div class="password-wrapper">
         <input type="password" id="password" placeholder="Password" autocomplete="current-password" required />
         <span class="password-toggle" onclick="togglePassword()">
@@ -137,19 +155,34 @@
           </svg>
         </span>
       </div>
-
       <button type="submit">Login</button>
       <p id="error"></p>
     </form>
 
+    <p style="margin-top:10px;font-size:14px;">
+      Don't have an account? <a href="#" onclick="toggleSignup(true)">Create one</a>
+    </p>
     <div class="footer-note">🛡️ This session will expire after 2 hours of inactivity</div>
+  </div>
+
+  <!-- Signup Modal -->
+  <div id="signupModal">
+    <div class="modal-content">
+      <h3>Create Account</h3>
+      <input type="email" id="signupEmail" placeholder="Email" />
+      <input type="password" id="signupPassword" placeholder="Password" />
+      <button onclick="signup()">Sign Up</button>
+      <p id="signupError"></p>
+      <p style="margin-top:10px;font-size:13px;">
+        Already have an account? <a href="#" onclick="toggleSignup(false)">Login</a>
+      </p>
+    </div>
   </div>
 
   <script>
     function togglePassword() {
       const pass = document.getElementById("password");
       const eyeIcon = document.getElementById("eyeIcon");
-
       if (pass.type === "password") {
         pass.type = "text";
         eyeIcon.innerHTML = `<path d="M12 5c-7.633 0-11 7-11 7s3.367 7 11 7c1.975 0 3.79-.48 5.387-1.304l2.59 2.59 1.414-1.414-18-18-1.414 1.414 3.42 3.42C3.265 10.234 1 12 1 12s3.367 7 11 7c2.178 0 4.213-.643 6-1.736l2.32 2.32 1.414-1.414-2.59-2.59A10.936 10.936 0 0023 12s-3.367-7-11-7zm0 12a5 5 0 01-5-5c0-.525.084-1.03.235-1.5l6.265 6.265A4.959 4.959 0 0112 17z"/>`;
@@ -159,11 +192,15 @@
           12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/>`;
       }
     }
+
+    function toggleSignup(show) {
+      document.getElementById("signupModal").style.display = show ? "flex" : "none";
+    }
   </script>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCmUyBI2od0-gufCXzsZit-zGulTOerzV8",
@@ -182,11 +219,7 @@
       const email = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
       const error = document.getElementById("error");
-
-      if (!email || !password) {
-        error.innerText = "Email and password are required.";
-        return;
-      }
+      error.innerText = "";
 
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -195,6 +228,22 @@
         window.location.href = "index.html";
       } catch (err) {
         error.innerText = "Login failed: " + err.message;
+      }
+    };
+
+    window.signup = async function () {
+      const email = document.getElementById("signupEmail").value.trim();
+      const password = document.getElementById("signupPassword").value.trim();
+      const error = document.getElementById("signupError");
+      error.innerText = "";
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        sessionStorage.setItem("loggedInUser", userCredential.user.email);
+        sessionStorage.setItem("lastActivity", Date.now());
+        window.location.href = "index.html";
+      } catch (err) {
+        error.innerText = "Signup failed: " + err.message;
       }
     };
   </script>
