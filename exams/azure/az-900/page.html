@@ -7,16 +7,13 @@
     body {
       font-family: Arial, sans-serif;
       background: #f4f4f4;
-      padding: 20px;
-      padding-top: 100px;
-      padding-bottom: 150px;
+      padding: 20px 20px 150px 20px;
       margin: 0;
     }
 
     .header-bar {
       position: fixed;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100%;
       background: #ffffff;
       border-bottom: 1px solid #ccc;
@@ -25,10 +22,8 @@
       align-items: center;
       padding: 10px 20px;
       z-index: 1000;
-      transition: top 0.3s ease;
     }
 
-    .header-left { display: flex; align-items: center; }
     .header-right {
       display: flex;
       flex-direction: column;
@@ -43,22 +38,8 @@
       .progress-container { width: 100%; }
     }
 
-    #backBtn {
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 5px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    #backBtn:disabled {
-      background-color: #adb5bd;
-      cursor: not-allowed;
-    }
-
-    .welcome { font-size: 14px; color: #555; font-weight: bold; text-align: right; }
-    .timer { font-size: 16px; font-weight: bold; text-align: right; }
+    .welcome { font-size: 14px; color: #555; font-weight: bold; }
+    .timer { font-size: 16px; font-weight: bold; }
 
     .progress-container {
       width: 200px;
@@ -75,6 +56,20 @@
       background-color: #007bff;
       transition: width 1s linear, background-color 0.5s ease;
     }
+
+    .submit-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 24px;
+      font-size: 15px;
+      font-weight: bold;
+      margin: 4px;
+      cursor: pointer;
+    }
+
+    .submit-btn:hover { background-color: #0056b3; }
 
     .summary {
       background: #e2e3e5;
@@ -104,19 +99,6 @@
       margin-bottom: 60px;
     }
 
-    .submit-btn {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 14px 30px;
-      font-size: 17px;
-      font-weight: bold;
-      margin: 5px;
-      cursor: pointer;
-    }
-    .submit-btn:hover { background-color: #0056b3; }
-
     #toast-container {
       position: fixed;
       top: 20px;
@@ -126,6 +108,7 @@
       flex-direction: column;
       gap: 10px;
     }
+
     .toast {
       background-color: #333;
       color: #fff;
@@ -136,8 +119,8 @@
       opacity: 0.95;
       animation: fadeInOut 4s ease forwards;
     }
+
     .toast-warning { background-color: #ffcc00; color: #000; }
-    .toast-error { background-color: #dc3545; }
     .toast-confirm { background-color: #007bff; }
 
     @keyframes fadeInOut {
@@ -146,32 +129,70 @@
       90% { opacity: 0.95; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-10px); }
     }
+
+    #fullscreen-blocker {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.97);
+      z-index: 3000;
+      text-align: center;
+      padding-top: 200px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    #fullscreen-blocker button,
+    #pause-overlay button {
+      padding: 12px 24px;
+      font-size: 18px;
+      margin-top: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #fullscreen-blocker button:hover,
+    #pause-overlay button:hover {
+      background-color: #0056b3;
+    }
+
+    #pause-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 2500;
+      color: white;
+      text-align: center;
+      font-size: 28px;
+      padding-top: 200px;
+    }
   </style>
 </head>
 <body>
-  <script>
-    const user = sessionStorage.getItem("loggedInUser");
-    const lastActivity = sessionStorage.getItem("lastActivity");
-    const maxInactivityMinutes = 120;
-
-    if (!user || !lastActivity || (Date.now() - parseInt(lastActivity)) / (1000 * 60) > maxInactivityMinutes) {
-      sessionStorage.clear();
-      showToast("\u26a0\ufe0f Session expired. Redirecting to login...", "toast-error");
-      setTimeout(() => window.location.href = "../../../login.html", 2000);
-    }
-  </script>
-
   <div id="toast-container"></div>
+<div id="fullscreen-blocker">
+  🔒 Please enter fullscreen mode to start your exam.<br><br>
+  <button onclick="goFullscreen()">Enter Fullscreen</button>
+  <button onclick="goHome()">🏠 Back to Home</button>
+</div>
+  <div id="pause-overlay">
+    ⏸️ Exam Paused<br><br>
+    <button onclick="resumeExam()">▶️ Resume</button>
+  </div>
 
-  <div class="header-bar" id="headerBar">
-    <div class="header-left">
-      <button id="backBtn" onclick="goBack()" disabled>← Back to Home</button>
-    </div>
+  <div class="header-bar">
     <div class="header-right">
       <div class="welcome" id="welcomeUser">👋 Welcome</div>
       <div class="timer" id="timer">Time Left: 45:00</div>
-      <div class="progress-container">
-        <div id="progressBar"></div>
+      <div class="progress-container"><div id="progressBar"></div></div>
+      <div id="pauseControls">
+        <button id="pauseBtn" class="submit-btn">⏸️ Pause</button>
       </div>
     </div>
   </div>
@@ -183,41 +204,80 @@
   <div class="submit-container">
     <button type="button" class="submit-btn" onclick="submitAnswers()">✅ Submit Answers</button>
     <button type="button" class="submit-btn" onclick="downloadJSON()">🧾 Download JSON</button>
+    <button type="button" class="submit-btn" id="backHomeBtn" style="display:none;" onclick="goHome()">🏠 Back to Home</button>
   </div>
-
-  <script>
-    function showToast(message, type = "") {
-      const toast = document.createElement("div");
-      toast.className = `toast ${type}`;
-      toast.innerHTML = message;
-      document.getElementById("toast-container").appendChild(toast);
-      setTimeout(() => toast.remove(), 4000);
-    }
-
-    function showConfirmToast(message, onConfirm) {
-      const toast = document.createElement("div");
-      toast.className = "toast toast-confirm";
-      toast.innerHTML = `${message}<br><br><button id='confirmYes' style='margin-right:10px;'>Yes</button><button id='confirmNo'>No</button>`;
-      document.getElementById("toast-container").appendChild(toast);
-      document.getElementById("confirmYes").onclick = () => { onConfirm(); toast.remove(); };
-      document.getElementById("confirmNo").onclick = () => toast.remove();
-    }
-
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
     const username = sessionStorage.getItem("loggedInUser") || "User";
     document.getElementById("welcomeUser").innerText = `👋 Welcome, ${username}`;
     sessionStorage.setItem("lastActivity", Date.now());
+
+    const maxInactivityMinutes = 120;
+    const lastActivity = sessionStorage.getItem("lastActivity");
+    if (!username || !lastActivity || (Date.now() - parseInt(lastActivity)) / (1000 * 60) > maxInactivityMinutes) {
+      sessionStorage.clear();
+      alert("⚠️ Session expired. Redirecting to login.");
+      window.location.href = "../../../login.html";
+    }
+
+    let allowBack = false;
+    let questions = [], timerPaused = false, countdown, timeLeft, duration = 45 * 60;
+
+    const pauseLimit = 2;
+    if (!sessionStorage.getItem("pauseCount")) sessionStorage.setItem("pauseCount", "0");
+
     document.addEventListener("mousemove", () => sessionStorage.setItem("lastActivity", Date.now()));
     document.addEventListener("keydown", () => sessionStorage.setItem("lastActivity", Date.now()));
     document.addEventListener("click", () => sessionStorage.setItem("lastActivity", Date.now()));
 
-    let allowBack = false;
-    let questions = [];
+    document.getElementById("pauseBtn").addEventListener("click", () => {
+      let pauseCount = parseInt(sessionStorage.getItem("pauseCount"));
+      if (pauseCount >= pauseLimit) {
+        showToast("⚠️ Pause limit reached. Cannot pause anymore.", "toast-warning");
+        return;
+      }
+
+      pauseCount++;
+      sessionStorage.setItem("pauseCount", pauseCount);
+      timerPaused = true;
+      document.getElementById("pause-overlay").style.display = "block";
+      document.querySelectorAll("input[type='radio']").forEach(i => i.disabled = true);
+      showToast(`⏸️ Exam paused. (${pauseCount}/${pauseLimit})`, "toast-confirm");
+
+      if (pauseCount >= pauseLimit) {
+        const pauseBtn = document.getElementById("pauseBtn");
+        pauseBtn.disabled = true;
+        pauseBtn.innerText = "⏸️ Pause Limit Reached";
+      }
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      const blocker = document.getElementById("fullscreen-blocker");
+      if (document.fullscreenElement) {
+        blocker.style.display = "none";
+      } else {
+        if (!allowBack) {
+          blocker.style.display = "block";
+          showToast("⚠️ You exited full screen. Please return to full screen to continue.", "toast-warning");
+        } else {
+          blocker.style.display = "none";
+          showToast("✅ You may now exit fullscreen and return.", "toast-confirm");
+        }
+      }
+    });
+
     const urlParams = new URLSearchParams(window.location.search);
     const examFile = urlParams.get("exam") || "questionsA.json";
 
     fetch(`./questions-dataset/${examFile}`)
       .then(res => res.json())
-      .then(data => { questions = data; renderQuestions(); startTimer(); })
+      .then(data => {
+        questions = data;
+        renderQuestions();
+        startTimer();
+        goFullscreen();
+        document.getElementById("fullscreen-blocker").style.display = "block";
+      })
       .catch(err => {
         document.getElementById("quizForm").innerHTML = "<p>Error loading questions.</p>";
         console.error("Error loading JSON:", err);
@@ -235,8 +295,8 @@
         block.appendChild(qTitle);
 
         q.options.forEach((option, j) => {
-          const input = document.createElement("input");
           const optionId = `q${i}opt${j}`;
+          const input = document.createElement("input");
           input.type = "radio";
           input.name = `question${i}`;
           input.value = option;
@@ -247,7 +307,6 @@
           label.setAttribute("for", optionId);
           label.appendChild(input);
           label.appendChild(document.createTextNode(" " + option));
-
           block.appendChild(label);
         });
 
@@ -259,8 +318,11 @@
       });
     }
 
-    function submitAnswers(timeout = false) {
+    window.submitAnswers = function (timeout = false) {
       let correct = 0, incorrect = 0, unanswered = 0;
+
+      clearInterval(countdown);
+
       questions.forEach((q, i) => {
         const selected = document.querySelector(`input[name='question${i}']:checked`);
         const inputs = document.querySelectorAll(`input[name='question${i}']`);
@@ -286,28 +348,36 @@
         explanationDiv.innerHTML = explanationHTML;
       });
 
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      const timeRemaining = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
       const summary = document.getElementById("summary");
       summary.style.display = "block";
       summary.innerHTML = `<strong>Result Summary:</strong><br>
         ✅ Correct: ${correct}<br>
         ❌ Incorrect: ${incorrect}<br>
         ❗ Unanswered: ${unanswered}<br>
+        🕒 Time Remaining: ${timeRemaining}<br>
         ${timeout ? "<em>Time expired. Auto-submitted.</em>" : ""}`;
 
       allowBack = true;
-      document.getElementById("backBtn").disabled = false;
       document.querySelectorAll("input[type='radio']").forEach(input => input.disabled = true);
-    }
+      document.getElementById("backHomeBtn").style.display = "inline-block";
+    };
 
-    function downloadJSON() {
+    window.downloadJSON = function () {
       const correct = document.querySelectorAll('.correct input:checked').length;
       const incorrect = document.querySelectorAll('.wrong input:checked').length;
       const unanswered = questions.length - document.querySelectorAll('input:checked').length;
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
 
       const summaryData = {
         correct,
         incorrect,
         unanswered,
+        timeRemaining: `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`,
         timestamp: new Date().toISOString(),
         user: sessionStorage.getItem("loggedInUser") || "User"
       };
@@ -319,60 +389,59 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    }
+    };
 
     function startTimer() {
-      const duration = 45 * 60;
-      let timeLeft = duration;
+      timeLeft = duration;
       const timerEl = document.getElementById("timer");
       const progressBar = document.getElementById("progressBar");
 
-      const countdown = setInterval(() => {
+      countdown = setInterval(() => {
+        if (timerPaused) return;
+
         const mins = Math.floor(timeLeft / 60);
         const secs = timeLeft % 60;
         timerEl.textContent = `Time Left: ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         const percent = (timeLeft / duration) * 100;
         progressBar.style.width = `${percent}%`;
+
         if (timeLeft <= 5 * 60) progressBar.style.backgroundColor = "#dc3545";
         if (timeLeft === 5 * 60) showToast("⏰ 5 minutes left! Finish up.", "toast-warning");
+
         timeLeft--;
         if (timeLeft < 0) {
           clearInterval(countdown);
           submitAnswers(true);
-          document.getElementById("backBtn").disabled = false;
         }
       }, 1000);
     }
 
-    function goBack() {
-      if (!allowBack) {
-        showToast("Back is disabled until the exam ends.", "toast-warning");
-        return;
-      }
-      const unansweredCount = questions.filter((_, i) => !document.querySelector(`input[name='question${i}']:checked`)).length;
-      let confirmMsg = unansweredCount > 0
-        ? `You still have ${unansweredCount} unanswered question${unansweredCount > 1 ? 's' : ''}.`
-        : "Ready to leave the page?";
-      showConfirmToast(`${confirmMsg}<br>Are you sure you want to leave this page?`, () => {
-        window.location.href = "../../../index.html";
-      });
+    window.resumeExam = function () {
+      timerPaused = false;
+      document.getElementById("pause-overlay").style.display = "none";
+      document.querySelectorAll("input[type='radio']").forEach(i => i.disabled = false);
+      showToast("▶️ Exam resumed.", "toast-confirm");
+    };
+
+    window.goFullscreen = function () {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) elem.requestFullscreen();
+      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+      else if (elem.mozRequestFullScreen) elem.mozRequestFullScreen();
+      else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+    };
+
+    window.goHome = function () {
+      window.location.href = "../../../index.html";
+    };
+
+    function showToast(msg, type = "") {
+      const toast = document.createElement("div");
+      toast.className = "toast " + type;
+      toast.innerText = msg;
+      document.getElementById("toast-container").appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
     }
-
-    let lastScrollTop = 0;
-    const header = document.getElementById("headerBar");
-    window.addEventListener("scroll", function () {
-      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-      header.style.top = currentScroll > lastScrollTop ? "-100px" : "0";
-      lastScrollTop = Math.max(currentScroll, 0);
-    });
-
-    history.pushState(null, "", location.href);
-    window.addEventListener("popstate", () => {
-      if (!allowBack) {
-        history.pushState(null, "", location.href);
-        showToast("You cannot go back during the exam.", "toast-warning");
-      }
-    });
 
     window.addEventListener("keydown", function (e) {
       if ((e.key === "F5") || (e.ctrlKey && e.key.toLowerCase() === "r")) {
@@ -387,6 +456,8 @@
         e.returnValue = "Your exam progress will be lost. Are you sure?";
       }
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>
