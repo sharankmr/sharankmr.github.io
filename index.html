@@ -191,23 +191,14 @@ body {
 
 <body>
   <script>
-    // Session expiration check based on last activity (2 hours = 120 minutes)
     const user = sessionStorage.getItem("loggedInUser");
     const lastActivity = sessionStorage.getItem("lastActivity");
     const maxInactivityMinutes = 120;
 
-    if (!user || !lastActivity) {
+    if (!user || !lastActivity || (Date.now() - parseInt(lastActivity)) / (1000 * 60) > maxInactivityMinutes) {
       sessionStorage.clear();
       alert("⚠️ Your session has expired. Please log in again.");
       window.location.href = "login.html";
-    } else {
-      const now = Date.now();
-      const elapsed = (now - parseInt(lastActivity)) / (1000 * 60); // in minutes
-      if (elapsed > maxInactivityMinutes) {
-        sessionStorage.clear();
-        alert("⚠️ You were inactive for more than 2 hours. Please log in again.");
-        window.location.href = "login.html";
-      }
     }
   </script>
 
@@ -235,12 +226,17 @@ body {
       <summary>AZ-900 Exams</summary>
       <select id="azSelect">
         <option value="">-- Select Practice Exam --</option>
-        <option value="exams/azure/az-900/page1.html">Practice Exam 1</option>
-        <option value="exams/azure/az-900/page2.html">Practice Exam 2</option>
-        <option value="exams/azure/az-900/page3.html">Practice Exam 3</option>
-        <option value="exams/azure/az-900/page4.html">Practice Exam 4</option>
-        <option value="exams/azure/az-900/page5.html">Practice Exam 5</option>
-        <option value="exams/azure/az-900/page6.html">Practice Exam 6</option>
+        <option value="questionsA.json">Practice Exam 1</option>
+        <option value="questionsB.json">Practice Exam 2</option>
+        <option value="questionsC.json">Practice Exam 3</option>
+        <option value="questionsD.json">Practice Exam 4</option>
+        <option value="questionsE.json">Practice Exam 5</option>
+        <option value="questionsF.json">Practice Exam 6</option>
+        <option value="questionsH.json">Practice Exam 7</option>
+        <option value="questionsI.json">Practice Exam 8</option>
+        <option value="questionsJ.json">Practice Exam 9</option>
+        <option value="questionsK.json">Practice Exam 10</option>
+        <option value="questionsL - Hard.json">Finals</option>
       </select>
     </details>
 
@@ -262,23 +258,15 @@ body {
   </div>
 
   <script>
-    function resetActivityTimer() {
-      sessionStorage.setItem("lastActivity", Date.now());
-    }
-
-    document.addEventListener("mousemove", resetActivityTimer);
-    document.addEventListener("keydown", resetActivityTimer);
-    document.addEventListener("click", resetActivityTimer);
-
     function logout() {
       sessionStorage.clear();
       window.location.href = "login.html";
     }
 
     function startAssessment() {
-      const az = document.getElementById("azSelect").value;
-      if (az) {
-        window.location.href = az;
+      const selectedExam = document.getElementById("azSelect").value;
+      if (selectedExam) {
+        window.location.href = `exams/azure/az-900/page.html?exam=${encodeURIComponent(selectedExam)}`;
       } else {
         alert("Please select an AZ-900 practice exam to begin.");
       }
@@ -289,8 +277,12 @@ body {
       if (username) {
         document.getElementById("welcome-user").innerText = `👋 Welcome, ${username}`;
       }
-      resetActivityTimer(); // Initial timer
+      sessionStorage.setItem("lastActivity", Date.now());
     });
+
+    document.addEventListener("mousemove", () => sessionStorage.setItem("lastActivity", Date.now()));
+    document.addEventListener("keydown", () => sessionStorage.setItem("lastActivity", Date.now()));
+    document.addEventListener("click", () => sessionStorage.setItem("lastActivity", Date.now()));
   </script>
 </body>
 </html>
