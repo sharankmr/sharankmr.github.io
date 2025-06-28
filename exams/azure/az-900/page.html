@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>AZ-900 Practice Exam</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -75,7 +76,7 @@
       background: #e2e3e5;
       padding: 10px;
       border-radius: 6px;
-      margin-bottom: 15px;
+      margin-top: 30px;
       display: none;
     }
 
@@ -176,11 +177,12 @@
 </head>
 <body>
   <div id="toast-container"></div>
-<div id="fullscreen-blocker">
-  🔒 Please enter fullscreen mode to start your exam.<br><br>
-  <button onclick="goFullscreen()">Enter Fullscreen</button>
-  <button onclick="goHome()">🏠 Back to Home</button>
-</div>
+  <div id="fullscreen-blocker">
+    🔒 Please enter fullscreen mode to start your exam.<br><br>
+    <button onclick="goFullscreen()">Enter Fullscreen</button>
+    <button onclick="goHome()">🏠 Back to Home</button>
+  </div>
+
   <div id="pause-overlay">
     ⏸️ Exam Paused<br><br>
     <button onclick="resumeExam()">▶️ Resume</button>
@@ -197,7 +199,6 @@
     </div>
   </div>
 
-  <div class="summary" id="summary"></div>
   <h1>AZ-900 Practice Exam</h1>
   <form id="quizForm"></form>
 
@@ -206,7 +207,42 @@
     <button type="button" class="submit-btn" onclick="downloadJSON()">🧾 Download JSON</button>
     <button type="button" class="submit-btn" id="backHomeBtn" style="display:none;" onclick="goHome()">🏠 Back to Home</button>
   </div>
+
+  <div class="summary" id="summary"></div>
+
 <script>
+
+   document.addEventListener("copy", handleViolation);
+  document.addEventListener("cut", handleViolation);
+  document.addEventListener("paste", handleViolation);
+  document.addEventListener("contextmenu", e => e.preventDefault());
+  document.addEventListener("dragstart", e => e.preventDefault());
+
+  document.addEventListener("keydown", (e) => {
+    // Block DevTools
+    if (
+      e.key === "F12" ||
+      (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+      (e.metaKey && e.altKey && e.key.toLowerCase() === "i")
+    ) {
+      e.preventDefault();
+      showToast("🚫 DevTools not allowed!", "toast-warning");
+      return false;
+    }
+    // Block Print
+    if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+      e.preventDefault();
+      showToast("🖨️ Printing is disabled!", "toast-warning");
+      return false;
+    }
+  });
+
+  function handleViolation(e) {
+    e.preventDefault();
+    showToast("⚠️ Unauthorized action detected. Submitting exam.", "toast-warning");
+    submitAnswers(true);
+  }
+  
   document.addEventListener("DOMContentLoaded", () => {
     const username = sessionStorage.getItem("loggedInUser") || "User";
     document.getElementById("welcomeUser").innerText = `👋 Welcome, ${username}`;
@@ -222,7 +258,6 @@
 
     let allowBack = false;
     let questions = [], timerPaused = false, countdown, timeLeft, duration = 45 * 60;
-
     const pauseLimit = 2;
     if (!sessionStorage.getItem("pauseCount")) sessionStorage.setItem("pauseCount", "0");
 
@@ -236,14 +271,12 @@
         showToast("⚠️ Pause limit reached. Cannot pause anymore.", "toast-warning");
         return;
       }
-
       pauseCount++;
       sessionStorage.setItem("pauseCount", pauseCount);
       timerPaused = true;
       document.getElementById("pause-overlay").style.display = "block";
       document.querySelectorAll("input[type='radio']").forEach(i => i.disabled = true);
       showToast(`⏸️ Exam paused. (${pauseCount}/${pauseLimit})`, "toast-confirm");
-
       if (pauseCount >= pauseLimit) {
         const pauseBtn = document.getElementById("pauseBtn");
         pauseBtn.disabled = true;
@@ -253,16 +286,13 @@
 
     document.addEventListener("fullscreenchange", () => {
       const blocker = document.getElementById("fullscreen-blocker");
-      if (document.fullscreenElement) {
-        blocker.style.display = "none";
+      if (document.fullscreenElement) blocker.style.display = "none";
+      else if (!allowBack) {
+        blocker.style.display = "block";
+        showToast("⚠️ You exited full screen. Please return to full screen to continue.", "toast-warning");
       } else {
-        if (!allowBack) {
-          blocker.style.display = "block";
-          showToast("⚠️ You exited full screen. Please return to full screen to continue.", "toast-warning");
-        } else {
-          blocker.style.display = "none";
-          showToast("✅ You may now exit fullscreen and return.", "toast-confirm");
-        }
+        blocker.style.display = "none";
+        showToast("✅ You may now exit fullscreen and return.", "toast-confirm");
       }
     });
 
@@ -364,7 +394,30 @@
       allowBack = true;
       document.querySelectorAll("input[type='radio']").forEach(input => input.disabled = true);
       document.getElementById("backHomeBtn").style.display = "inline-block";
-    };
+
+      // Auto scroll to summary
+      summary.scrollIntoView({ behavior: "smooth" });
+
+      // Confetti if >= 80%
+      const percentage = (correct / questions.length) * 100;
+      
+      if (percentage >= 80) { 
+        let burstCount = 0;
+        const confettiInterval = setInterval(() => {
+          confetti({
+            particleCount: 100,
+            spread: 360,
+            startVelocity: 50,
+            origin: {
+              x: Math.random(),
+              y: Math.random() - 0.2
+            }
+          });
+          burstCount++;
+          if (burstCount >= 6) clearInterval(confettiInterval); // 3 seconds
+        }, 500);
+      }
+    }; // ✅ This closes submitAnswers function properly
 
     window.downloadJSON = function () {
       const correct = document.querySelectorAll('.correct input:checked').length;
@@ -458,6 +511,5 @@
     });
   });
 </script>
-
 </body>
 </html>
